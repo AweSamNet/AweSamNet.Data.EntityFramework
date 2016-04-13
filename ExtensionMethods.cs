@@ -47,7 +47,7 @@ namespace AweSamNet.Data.EntityFramework
         /// <summary>
         /// Upsert an entity based on the passed condition Func.
         /// </summary>
-        public static void Upsert<TEntity>(this IDbContext db, TEntity entity, Func<TEntity, bool> isNewCondition)
+        public static TEntity Upsert<TEntity>(this IDbContext db, TEntity entity, Func<TEntity, bool> isNewCondition)
             where TEntity : class
         {
             db.Set<TEntity>().Attach(entity);
@@ -55,6 +55,8 @@ namespace AweSamNet.Data.EntityFramework
             db.Entry(entity).State = isNewCondition(entity)
                 ? EntityState.Added
                 : EntityState.Modified;
+
+            return entity;
         }
 
         /// <summary>
