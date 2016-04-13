@@ -89,7 +89,7 @@ namespace AweSamNet.Data.EntityFramework
                     //see if it exists
                     if (!Enumerable.Cast<object>(reference.Query()).Any())
                     {
-                        db.Set(reference.CurrentValue.GetType()).Add(reference.CurrentValue);
+                        db.Set(reference.EntityEntry.Entity.GetType()).Add(reference.EntityEntry.Entity);
                     }
                 }
             }
