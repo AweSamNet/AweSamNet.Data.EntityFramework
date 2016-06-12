@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
@@ -32,14 +33,16 @@ namespace AweSamNet.Data.EntityFramework
             where TProperty : class, new()
         {
             db.Set<TEntity>().Attach(entity);
+            db.AttachNavigationProperties(entity);
 
             //attach any existing entities
             foreach (var item in collection.Where(item => key(item) != key(new TProperty())))
             {
-                db.Set<TProperty>().Attach(item);
+                var foundItem = db.Set<TProperty>().Find(key(item));
+
                 if (navigationProperty(entity).All(t => key(t) != key(item)))
                 {
-                    navigationProperty(entity).Add(item);
+                    navigationProperty(entity).Add(foundItem ?? item);
                 }
             }
         }
@@ -62,34 +65,43 @@ namespace AweSamNet.Data.EntityFramework
         /// <summary>
         /// Attaches navigation properties and adds them only if new.  This method prevents trying to save existing navigation properties as Insert.
         /// </summary>
-        /// <typeparam name="TEntity">Primary entity Type.</typeparam>
         /// <param name="db">Database context to use.</param>
         /// <param name="entity">Primary entity.</param>
-        public static void AttachNavigationProperties<TEntity>(this IDbContext db, TEntity entity)
-            where TEntity : class
+        public static void AttachNavigationProperties(this IDbContext db, object entity)
         {
-            Type type = typeof (TEntity);
-            var references = _cache.GetOrAdd<IList<string>>(type.Name, () =>
+            Type type = entity.GetType();
+            var references = _cache.GetOrAdd<IList<PropertyInfo>>(type.Name, () =>
             {
-                var list = new List<string>();
+                var list = new List<PropertyInfo>();
                 foreach (PropertyInfo propertyInfo in entity.GetType().GetProperties())
                 {
                     var reference = db.Entry(entity).Member(propertyInfo.Name) as DbReferenceEntry;
-                    if (reference != null) list.Add(propertyInfo.Name);
+                    if (reference != null) list.Add(propertyInfo);
                 }
                 return list;
             }, TimeSpan.FromMinutes(10)); // we only want to store types in local cache for 10 minutes since once every 10 minutes per entity type is not a large cost.
 
-            foreach (var referenceName in references)
+            foreach (var propertyInfo in references)
             {
-                var reference = db.Entry(entity).Member(referenceName) as DbReferenceEntry;
-                if (reference != null)
+                var reference = db.Entry(entity).Member(propertyInfo.Name) as DbReferenceEntry;
+                var value = propertyInfo.GetValue(entity);
+                var enumerable = value as IEnumerable;
+
+                //we only want to load from the context in the event that the in-memory entity object actually has data here.
+                if (reference != null && value != null && (enumerable == null || enumerable.Cast<object[]>().Any()))
                 {
                     reference.Load();
                     //see if it exists
-                    if (!Enumerable.Cast<object>(reference.Query()).Any())
+                    var entities = Enumerable.Cast<object>(reference.Query());
+                    var subEntities = entities as object[] ?? entities.ToArray();
+                    if (!subEntities.Any())
                     {
                         db.Set(reference.EntityEntry.Entity.GetType()).Add(reference.EntityEntry.Entity);
+                    }
+
+                    foreach ( var subEntity in subEntities)
+                    {
+                        db.AttachNavigationProperties(subEntity);
                     }
                 }
             }
