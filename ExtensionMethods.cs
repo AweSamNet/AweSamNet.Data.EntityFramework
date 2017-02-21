@@ -38,7 +38,7 @@ namespace AweSamNet.Data.EntityFramework
             db.Set<TEntity>().Attach(entity);
             db.AttachNavigationProperties(entity);
 
-            //attach any existing entities
+            // attach any existing entities
             foreach (var item in collection.Where(item => key(item) != key(new TProperty())))
             {
                 var foundItem = db.Set<TProperty>().Find(key(item));
@@ -90,11 +90,11 @@ namespace AweSamNet.Data.EntityFramework
                 var value = propertyInfo.GetValue(entity);
                 var enumerable = value as IEnumerable;
 
-                //we only want to load from the context in the event that the in-memory entity object actually has data here.
+                // we only want to load from the context in the event that the in-memory entity object actually has data here.
                 if (reference != null && value != null && (enumerable == null || enumerable.Cast<object[]>().Any()))
                 {
                     reference.Load();
-                    //see if it exists
+                    // see if it exists
                     var entities = Enumerable.Cast<object>(reference.Query());
                     var subEntities = entities as object[] ?? entities.ToArray();
                     if (!subEntities.Any())
