@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -24,7 +24,7 @@ namespace AweSamNet.Data.EntityFramework
         /// <param name="entity">Primary entity.</param>
         /// <param name="collection">Collection to add to the navigation property.</param>
         /// <param name="key">Func to get the key from the entity.</param>
-        /// <param name="navigationProperty">Funct to get the navigation property of the entity.</param>
+        /// <param name="navigationProperty">Func to get the navigation property of the entity.</param>
         public static void TryAddRangeToNavigationProperty<TEntity, TProperty>(this IDbContext db,
             TEntity entity,
             TProperty[] collection, Func<TProperty, object> key,
