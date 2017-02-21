@@ -14,6 +14,9 @@ namespace AweSamNet.Data.EntityFramework
     public static class ExtensionMethods
     {
         private static MemoryCache _cache = new MemoryCache(null);
+        
+        // we only want to store types in local cache for 10 minutes since once every 10 minutes per entity type is not a large cost.
+        private const int _minutesToCacheTypes = 10;
 
         /// <summary>
         /// Adds a range of entities to a navigation property of another entity.
@@ -79,7 +82,7 @@ namespace AweSamNet.Data.EntityFramework
                     if (reference != null) list.Add(propertyInfo);
                 }
                 return list;
-            }, TimeSpan.FromMinutes(10)); // we only want to store types in local cache for 10 minutes since once every 10 minutes per entity type is not a large cost.
+            }, TimeSpan.FromMinutes(_minutesToCacheTypes));
 
             foreach (var propertyInfo in references)
             {
